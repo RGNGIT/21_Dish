@@ -161,5 +161,33 @@ namespace WinFormsApp1
             }
         }
 
+        public string ConnectDishIngr(string DishId, string IngrId)
+        {
+            try
+            {
+                SqlCommand command = new SqlCommand($"INSERT INTO menu2.dbo.List_Dish_Ingr (id_ingr, id_dish) VALUES ('{IngrId}', '{DishId}');", connection);
+                return $"Команда выполнена. Задействовано строк таблицы: {command.ExecuteNonQuery()}";
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                return e.ToString();
+            }
+        }
+
+        public string ConnectMenuDish(string DishId, string MenuId)
+        {
+            try
+            {
+                SqlCommand command = new SqlCommand($"INSERT INTO menu2.dbo.List_Menu_Dish (id_menu, id_dish) VALUES ('{MenuId}', '{DishId}');", connection);
+                return $"Команда выполнена. Задействовано строк таблицы: {command.ExecuteNonQuery()}";
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                return e.ToString();
+            }
+        }
+
     }
 }

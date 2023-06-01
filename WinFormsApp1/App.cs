@@ -69,17 +69,31 @@ namespace WinFormsApp1
 
         void DishIngrGridsUpdate()
         {
+            DB db = new(connection);
+            dataGridViewDishConnect.DataSource = db.ReturnTable("id, Name", "menu2.dbo.Dish", null!);
+            dataGridViewIngrConnect.DataSource = db.ReturnTable("id, Name", "menu2.dbo.Ingredients", null!);
+            db.connection.Close();
+        }
 
+        void MenuDishGridsUpdate()
+        {
+            DB db = new(connection);
+            dataGridViewDishMenu.DataSource = db.ReturnTable("id, Name", "menu2.dbo.Dish", null!);
+            dataGridViewMenuDish.DataSource = db.ReturnTable("a.id, a.Date as Дата, b.Name as Ресторан", "menu2.dbo.Menu as a, menu2.dbo.Restaurant as b", "WHERE a.id_rest = b.id");
+            db.connection.Close();
         }
 
         void MiscTabsEvents()
         {
-            switch (tabControlMisc.SelectedIndex) 
+            switch (tabControlMisc.SelectedIndex)
             {
                 case 0:
+                    labelTag.Text = "Ингредиенты блюда";
                     DishIngrGridsUpdate();
                     break;
                 case 1:
+                    labelTag.Text = "Блюда из меню";
+                    MenuDishGridsUpdate();
                     break;
             }
         }
@@ -228,6 +242,9 @@ namespace WinFormsApp1
                 case 5:
                     MiscTabsEvents();
                     break;
+                case 6:
+                    TZTabsEvents();
+                    break;
             }
         }
 
@@ -268,9 +285,151 @@ namespace WinFormsApp1
             db.connection.Close();
         }
 
+        void ConnectDishIngr()
+        {
+            DB db = new(connection);
+            for (int i = 0; i < dataGridViewIngrConnect.SelectedRows.Count; i++)
+            {
+                db.ConnectDishIngr(dataGridViewDishConnect.SelectedRows[0].Cells[0].Value.ToString()!, dataGridViewIngrConnect.SelectedRows[i].Cells[0].Value.ToString()!);
+            }
+            db.connection.Close();
+        }
+
+        void ConnectDishMenu()
+        {
+            DB db = new(connection);
+            for (int i = 0; i < dataGridViewDishMenu.SelectedRows.Count; i++)
+            {
+                db.ConnectMenuDish(dataGridViewDishMenu.SelectedRows[i].Cells[0].Value.ToString()!, dataGridViewMenuDish.SelectedRows[0].Cells[0].Value.ToString()!);
+            }
+            db.connection.Close();
+        }
+
         private void buttonConnect_Click(object sender, EventArgs e)
         {
+            switch (tabControlMisc.SelectedIndex)
+            {
+                case 0:
+                    ConnectDishIngr();
+                    break;
+                case 1:
+                    ConnectDishMenu();
+                    break;
+            }
+        }
 
+        private void dataGridViewDishConnect_RowHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            DB db = new(connection);
+            dataGridViewDishIngrs.DataSource = db.ReturnTable(
+                "a.Name as Наименование, a.Number_of_calories as Калории, a.Number_of_proteins as Белки, a.Number_of_carbohydrates as Углеводы",
+                "menu2.dbo.Ingredients as a, menu2.dbo.List_Dish_Ingr as b, menu2.dbo.Type_Ingredients as c, menu2.dbo.Units_Of_Measurement as d",
+                $"WHERE a.id_units_of_measurement = d.id AND a.id_type_ingredients = c.id AND b.id_ingr = a.id AND b.id_dish = '{dataGridViewDishConnect.SelectedRows[0].Cells[0].Value}'"
+                );
+            db.connection.Close();
+        }
+
+        private void tabControlMisc_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            MiscTabsEvents();
+        }
+
+        private void dataGridViewMenuDish_RowHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            DB db = new(connection);
+            dataGridViewDishIngrs.DataSource = db.ReturnTable(
+                "a.Name as Наименование, c.Date as Дата, d.Name as Ресторан",
+                "menu2.dbo.Dish as a, menu2.dbo.List_Menu_Dish as b, menu2.dbo.Menu as c, menu2.dbo.Restaurant as d",
+                $"WHERE b.id_dish = a.id AND b.id_menu = c.id AND c.id_rest = d.id AND c.id = '{dataGridViewMenuDish.SelectedRows[0].Cells[0].Value}'"
+                );
+            db.connection.Close();
+        }
+
+        void ComboTZ1Updater()
+        {
+            DB db = new(connection);
+            comboBoxTZ11Type.Items.Clear();
+            dataGridViewBuffer.DataSource = db.ReturnTable("*", "menu2.dbo.Type_Dish", null!);
+            for (int i = 0; i < dataGridViewBuffer.Rows.Count - 1; i++)
+            {
+                comboBoxTZ11Type.Items.Add($"{dataGridViewBuffer.Rows[i].Cells[0].Value} {dataGridViewBuffer.Rows[i].Cells[1].Value}");
+            }
+            db.connection.Close();
+        }
+
+        void ComboTZ2Updater()
+        {
+            DB db = new(connection);
+            comboBoxTZ22Menu.Items.Clear();
+            dataGridViewBuffer.DataSource = db.ReturnTable("a.id, a.Date, b.Name", "menu2.dbo.Menu as a, menu2.dbo.Restaurant as b", "WHERE a.id_rest = b.id");
+            for (int i = 0; i < dataGridViewBuffer.Rows.Count - 1; i++)
+            {
+                comboBoxTZ22Menu.Items.Add($"{dataGridViewBuffer.Rows[i].Cells[0].Value} Меню от {dataGridViewBuffer.Rows[i].Cells[1].Value} из ресторана {dataGridViewBuffer.Rows[i].Cells[2].Value}");
+            }
+            db.connection.Close();
+        }
+
+        void DoTZ1()
+        {
+            DB db = new(connection);
+            dataGridViewTZ11.DataSource = db.ReturnTable(
+                "b.Name as Наименование, a.Name as Тип, d.Date as Дата",
+                "menu2.dbo.Type_Dish as a, menu2.dbo.Dish as b, menu2.dbo.List_Menu_Dish as c, menu2.dbo.Menu as d",
+                $"WHERE a.id = '{comboBoxTZ11Type.Text.Split(' ')[0]}' AND b.id_type_dish = a.id AND c.id_dish = b.id AND c.id_menu = d.id AND d.Date BETWEEN '{dateTimePickerTZ11From.Value.ToString("dd/MM/yyyy")}' AND '{dateTimePickerTZ11To.Value.ToString("dd/MM/yyyy")}'"
+                );
+            db.connection.Close();
+        }
+
+        void DoTZ2()
+        {
+            DB db = new(connection);
+            dataGridViewTZ22.DataSource = db.ReturnTable(
+                "c.Name as Наименование, c.Number_of_calories as Калории, c.Number_of_proteins as Белки, c.Number_of_carbohydrates as Углероды",
+                "menu2.dbo.List_Menu_Dish as a, menu2.dbo.Dish as b, menu2.dbo.List_Dish_Ingr as d, menu2.dbo.Ingredients as c, menu2.dbo.Menu as e",
+                $"WHERE a.id_dish = b.id AND d.id_dish = b.id AND d.id_ingr = c.id AND a.id_menu = '{comboBoxTZ22Menu.Text.Split(' ')[0]}' AND e.id = a.id_menu AND e.Date BETWEEN '{dateTimePickerTZ22From.Value.ToString("dd/MM/yyyy")}' AND '{dateTimePickerTZ22To.Value.ToString("dd/MM/yyyy")}'"
+                );
+            db.connection.Close();
+        }
+
+        void TZTabsEvents()
+        {
+            switch (tabControlTZ.SelectedIndex)
+            {
+                case 0:
+                    ComboTZ1Updater();
+                    break;
+                case 1:
+                    ComboTZ2Updater();
+                    break;
+                case 2:
+
+                    break;
+            }
+        }
+
+        private void buttonTZ1_Click(object sender, EventArgs e)
+        {
+            DoTZ1();
+        }
+
+        private void tabControlTZ_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            TZTabsEvents();
+        }
+
+        private void buttonTZ2_Click(object sender, EventArgs e)
+        {
+            DoTZ2();
+        }
+
+        private void buttonTZ11_Click(object sender, EventArgs e)
+        {
+            DoTZ1();
+        }
+
+        private void buttonTZ22_Click(object sender, EventArgs e)
+        {
+            DoTZ2();
         }
     }
 }
