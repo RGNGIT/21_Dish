@@ -189,5 +189,33 @@ namespace WinFormsApp1
             }
         }
 
+        public string AddRating(string DishId, string Rating)
+        {
+            try
+            {
+                SqlCommand command = new SqlCommand($"INSERT INTO menu2.dbo.Rating (Name, id_dish, Date) VALUES ('{Rating}', '{DishId}', GETDATE());", connection);
+                return $"Команда выполнена. Задействовано строк таблицы: {command.ExecuteNonQuery()}";
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                return e.ToString();
+            }
+        }
+
+        public string Delete(string Id, string Table)
+        {
+            try
+            {
+                SqlCommand command = new SqlCommand($"DELETE FROM {Table} WHERE id = {Id};", connection);
+                return $"Команда выполнена. Задействовано строк таблицы: {command.ExecuteNonQuery()}";
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                return e.ToString();
+            }
+        }
+
     }
 }

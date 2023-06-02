@@ -18,22 +18,19 @@ namespace WinFormsApp1
             switch (tabControlDir.SelectedIndex)
             {
                 case 0:
-                    dataGridViewDir.DataSource = db.ReturnTable("a.Name as Наименование", "menu2.dbo.Units_Of_Measurement as a", null!);
+                    dataGridViewDir.DataSource = db.ReturnTable("a.id, a.Name as Наименование", "menu2.dbo.Units_Of_Measurement as a", null!);
                     break;
                 case 1:
-                    dataGridViewDir.DataSource = db.ReturnTable("a.Name as Наименование", "menu2.dbo.Type_Ingredients as a", null!);
+                    dataGridViewDir.DataSource = db.ReturnTable("a.id, a.Name as Наименование", "menu2.dbo.Type_Ingredients as a", null!);
                     break;
                 case 2:
-                    dataGridViewDir.DataSource = db.ReturnTable("a.Name as Наименование", "menu2.dbo.Type_Dish as a", null!);
+                    dataGridViewDir.DataSource = db.ReturnTable("a.id, a.Name as Наименование", "menu2.dbo.Type_Dish as a", null!);
                     break;
                 case 3:
-                    dataGridViewDir.DataSource = db.ReturnTable("a.Name as Наименование", "menu2.dbo.Restaurant as a", null!);
+                    dataGridViewDir.DataSource = db.ReturnTable("a.id, a.Name as Наименование", "menu2.dbo.Restaurant as a", null!);
                     break;
                 case 4:
-                    dataGridViewDir.DataSource = db.ReturnTable("a.Name as Наименование", "menu2.dbo.Rating as a", null!);
-                    break;
-                case 5:
-                    dataGridViewDir.DataSource = db.ReturnTable("a.Name as Наименование, a.Salary as Зарплата", "menu2.dbo.Post as a", null!);
+                    dataGridViewDir.DataSource = db.ReturnTable("a.id, a.Name as Наименование, a.Salary as Зарплата", "menu2.dbo.Post as a", null!);
                     break;
             }
             db.connection.Close();
@@ -57,9 +54,6 @@ namespace WinFormsApp1
                     db.AddRestautant(textBoxRestaurant.Text);
                     break;
                 case 4:
-                    db.AddRating(textBoxRating.Text);
-                    break;
-                case 5:
                     db.AddPost(textBoxPostName.Text, textBoxSalary.Text);
                     break;
             }
@@ -126,7 +120,7 @@ namespace WinFormsApp1
         {
             DB db = new(connection);
             dataGridViewIngr.DataSource = db.ReturnTable(
-                "a.Name as Наименование, a.Number_of_calories as Калории, a.Number_of_proteins as Белки, a.Number_of_carbohydrates as Углеводы, b.Name as 'Единица измерения', c.Name as Тип",
+                "a.id, a.Name as Наименование, a.Number_of_calories as Калории, a.Number_of_proteins as Белки, a.Number_of_carbohydrates as Углеводы, b.Name as 'Единица измерения', c.Name as Тип",
                 "menu2.dbo.Ingredients as a, menu2.dbo.Units_Of_Measurement as b, menu2.dbo.Type_Ingredients as c",
                 "WHERE a.id_units_of_measurement = b.id AND a.id_type_ingredients = c.id"
                 );
@@ -149,7 +143,7 @@ namespace WinFormsApp1
         {
             DB db = new(connection);
             dataGridViewEmp.DataSource = db.ReturnTable(
-                "a.Surname as Фамилия, a.Name as Имя, a.Patronymic as Отчество, b.Name as Должность, b.Salary as Зарплата",
+                "a.id, a.Surname as Фамилия, a.Name as Имя, a.Patronymic as Отчество, b.Name as Должность, b.Salary as Зарплата",
                 "menu2.dbo.Employee as a, menu2.dbo.Post as b",
                 "WHERE a.id_post = b.id"
                 );
@@ -172,7 +166,7 @@ namespace WinFormsApp1
         {
             DB db = new(connection);
             dataGridViewMenu.DataSource = db.ReturnTable(
-                "a.Name as 'Наименование ресторана', b.Date as 'Дата добавления'",
+                "b.id, a.Name as 'Наименование ресторана', b.Date as 'Дата добавления'",
                 "menu2.dbo.Restaurant as a, menu2.dbo.Menu as b",
                 "WHERE b.id_rest = a.id"
                 );
@@ -214,6 +208,25 @@ namespace WinFormsApp1
             db.connection.Close();
         }
 
+        void UpdateDishForRatingCombo()
+        {
+            DB db = new(connection);
+            comboBoxDishRating.Items.Clear();
+            dataGridViewBuffer.DataSource = db.ReturnTable("*", "menu2.dbo.Dish", null!);
+            for (int i = 0; i < dataGridViewBuffer.Rows.Count - 1; i++)
+            {
+                comboBoxDishRating.Items.Add($"{dataGridViewBuffer.Rows[i].Cells[0].Value} {dataGridViewBuffer.Rows[i].Cells[1].Value}");
+            }
+            db.connection.Close();
+        }
+
+        void UpdateRatingGrid()
+        {
+            DB db = new(connection);
+            dataGridViewRating.DataSource = db.ReturnTable("a.id, b.Name as Блюдо, a.Name as Оценка, a.Date as Дата", "menu2.dbo.Rating as a, menu2.dbo.Dish as b", "WHERE a.id_dish = b.id");
+            db.connection.Close();
+        }
+
         private void tabControlMain_SelectedIndexChanged(object sender, EventArgs e)
         {
             switch (tabControlMain.SelectedIndex)
@@ -243,6 +256,10 @@ namespace WinFormsApp1
                     MiscTabsEvents();
                     break;
                 case 6:
+                    UpdateDishForRatingCombo();
+                    UpdateRatingGrid();
+                    break;
+                case 7:
                     TZTabsEvents();
                     break;
             }
@@ -430,6 +447,81 @@ namespace WinFormsApp1
         private void buttonTZ22_Click(object sender, EventArgs e)
         {
             DoTZ2();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            DB db = new(connection);
+            db.AddRating(comboBoxDishRating.Text.Split(' ')[0], comboBoxDishRatingRate.Text);
+            UpdateRatingGrid();
+            db.connection.Close();
+        }
+
+        private void buttonTZ3_Click(object sender, EventArgs e)
+        {
+            DB db = new(connection);
+            dataGridViewTZ3.DataSource = db.ReturnTable(
+                "a.Name as Блюдо, b.Name as Оценка",
+                "menu2.dbo.Dish as a, menu2.dbo.Rating as b",
+                $"WHERE b.id_dish = a.id AND b.Date BETWEEN '{dateTimePickerTZ3From.Value.ToString("dd/MM/yyyy")}' AND '{dateTimePickerTZ3To.Value.ToString("dd/MM/yyyy")}' ORDER BY b.id_dish"
+                );
+            db.connection.Close();
+        }
+
+        private void buttonDelDir_Click(object sender, EventArgs e)
+        {
+            DB db = new(connection);
+            string[] tabs = new string[]
+            {
+                "menu2.dbo.Units_Of_Measurement",
+                "menu2.dbo.Type_Ingredients",
+                "menu2.dbo.Type_Dish",
+                "menu2.dbo.Restaurant",
+                "menu2.dbo.Post"
+            };
+            db.Delete(dataGridViewDir.SelectedRows[0].Cells[0].Value.ToString()!, tabs[tabControlDir.SelectedIndex]);
+            DirTabsEvents();
+            db.connection.Close();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            DB db = new(connection);
+            db.Delete(dataGridViewIngr.SelectedRows[0].Cells[0].Value.ToString()!, "menu2.dbo.Ingredients");
+            UpdateIngrGrid();
+            db.connection.Close();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            DB db = new(connection);
+            db.Delete(dataGridViewEmp.SelectedRows[0].Cells[0].Value.ToString()!, "menu2.dbo.Employee");
+            UpdateEmpGrid();
+            db.connection.Close();
+        }
+
+        private void button3_Click_1(object sender, EventArgs e)
+        {
+            DB db = new(connection);
+            db.Delete(dataGridViewMenu.SelectedRows[0].Cells[0].Value.ToString()!, "menu2.dbo.Menu");
+            UpdateMenuGrid();
+            db.connection.Close();
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            DB db = new(connection);
+            db.Delete(dataGridViewDish.SelectedRows[0].Cells[0].Value.ToString()!, "menu2.dbo.Dish");
+            UpdateDishGrid();
+            db.connection.Close();
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            DB db = new(connection);
+            db.Delete(dataGridViewRating.SelectedRows[0].Cells[0].Value.ToString()!, "menu2.dbo.Rating");
+            UpdateRatingGrid();
+            db.connection.Close();
         }
     }
 }
